@@ -1,0 +1,108 @@
+/* src/styles/star-rail-glass-theme.css */
+
+/* 引入科技感字体 */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+:root {
+  /* 色彩变量 */
+  --sr-bg: #0c0a1a;
+  --sr-text: #ffffff;
+  --sr-text-secondary: #c0f2ff;
+  --sr-gold: #FFD700;   /* 流光金 */
+  --sr-cyan: #00f2ff;   /* 星轨青 */
+  --sr-panel-bg: rgba(12, 10, 26, 0.4);
+  --sr-border-color: rgba(0, 242, 255, 0.2);
+  --sr-highlight-bg: rgba(0, 242, 255, 0.1);
+
+  /* 极光颜色 - 调整为宇宙色调 */
+  --aurora-color-1: #3a0ca3; /* Deep Purple */
+  --aurora-color-2: #0077b6; /* Ocean Blue */
+  --aurora-color-3: #4cc9f0; /* Light Cyan */
+  --aurora-color-4: #f72585; /* Magenta */
+}
+
+/* 移除旧主题变量 */
+:root { --liquid-text-color: unset; }
+
+body {
+  font-family: 'Orbitron', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  color: var(--sr-text);
+  background-color: var(--sr-bg);
+  overflow: hidden;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* 动态星空背景 */
+body::before {
+  content: '';
+  position: fixed;
+  top: -25%;
+  left: -25%;
+  width: 150%;
+  height: 150%;
+  background: var(--sr-bg) url('c:/Users/AnLin/AppData/Local/Temp/b2a05260-1e19-4ef7-adb5-c847220a6b08.png') center/cover;
+  animation: pan-background 240s linear infinite;
+  z-index: -1;
+}
+
+@keyframes pan-background {
+  0% { transform: translate(0, 0); }
+  25% { transform: translate(10%, 5%); }
+  50% { transform: translate(5%, 10%); }
+  75% { transform: translate(-5%, -10%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* 核心几何玻璃面板 */
+.sr-glass {
+  background: var(--sr-panel-bg);
+  backdrop-filter: blur(8px) saturate(150%);
+  -webkit-backdrop-filter: blur(8px) saturate(150%);
+  box-shadow: 0 0 30px rgba(0,0,0,0.5);
+  position: relative;
+  border: 1px solid var(--sr-border-color);
+
+  /* 关键：使用 clip-path 创建切角几何形状 */
+  clip-path: polygon(20px 0, calc(100% - 20px) 0, 100% 20px, 100% calc(100% - 20px), calc(100% - 20px) 100%, 20px 100%, 0 calc(100% - 20px), 0 20px);
+  transition: all 0.3s ease;
+}
+
+/* 发光角落装饰 */
+.sr-glass::before, .sr-glass::after {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-style: solid;
+  border-color: var(--sr-cyan);
+  transition: all 0.3s ease;
+}
+.sr-glass::before {
+  top: -2px; left: -2px;
+  border-width: 2px 0 0 2px;
+}
+.sr-glass::after {
+  bottom: -2px; right: -2px;
+  border-width: 0 2px 2px 0;
+}
+
+/* 通用组件 */
+.sr-button {
+  background: transparent;
+  border: 1px solid var(--sr-border-color);
+  color: var(--sr-cyan);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  transition: all 0.3s ease;
+}
+.sr-button:hover {
+  background: var(--sr-highlight-bg);
+  color: #fff;
+  border-color: var(--sr-cyan);
+  box-shadow: 0 0 15px var(--sr-highlight-bg);
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--sr-cyan); border-radius: 4px; }

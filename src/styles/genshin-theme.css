@@ -1,0 +1,98 @@
+/* src/styles/genshin-theme.css */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
+
+:root {
+  /* Colors */
+  --genshin-bg: #f4f2e8;
+  --genshin-panel-bg: rgba(243, 237, 227, 0.85);
+  --genshin-text: #5c554a;
+  --genshin-text-light: #8c8376;
+  --genshin-gold: #b6996b;
+  --genshin-border: #d6c6a8;
+  --genshin-highlight-bg: rgba(182, 153, 107, 0.1);
+  --genshin-scrollbar-thumb: #c9b897;
+
+  /* Fonts */
+  --font-genshin: 'Noto Serif SC', 'Times New Roman', serif;
+}
+
+body {
+  font-family: var(--font-genshin);
+  color: var(--genshin-text);
+  background: var(--genshin-bg) url('https://images.unsplash.com/photo-1616047833032-8418593a84e2?q=80&w=2070') center/cover fixed;
+  overflow: hidden;
+}
+
+/* Main Panel Style */
+.genshin-panel {
+  background: var(--genshin-panel-bg);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid var(--genshin-border);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  position: relative;
+  padding: 2rem;
+}
+
+/* Decorative Elements */
+.genshin-panel::before,
+.genshin-panel::after {
+  content: '';
+  position: absolute;
+  width: 99%;
+  height: 98%;
+  left: 0.5%;
+  top: 1%;
+  border-style: solid;
+  border-color: var(--genshin-gold);
+  border-width: 1px;
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+.genshin-panel::after {
+  border-width: 2px;
+  opacity: 0.5;
+  transform: scale(0.98);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--genshin-scrollbar-thumb); border-radius: 4px; }
+
+/* Element Plus Overrides */
+.genshin-button {
+  background: transparent;
+  border: 1px solid var(--genshin-border);
+  color: var(--genshin-gold);
+  transition: all 0.3s ease;
+}
+.genshin-button:hover {
+  background: var(--genshin-highlight-bg);
+  border-color: var(--genshin-gold);
+  color: var(--genshin-gold);
+  box-shadow: 0 0 10px var(--genshin-highlight-bg);
+}
+
+.genshin-select .el-input__wrapper,
+.genshin-input .el-input__wrapper {
+  background: var(--genshin-highlight-bg) !important;
+  border: 1px solid var(--genshin-border) !important;
+  box-shadow: none !important;
+  border-radius: 6px;
+}
+
+.genshin-select .el-input__inner,
+.genshin-input .el-input__inner {
+  color: var(--genshin-text) !important;
+}
+
+.genshin-input .el-input-group__prepend {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: 1px solid var(--genshin-border) !important;
+  border-right: none !important;
+  color: var(--genshin-gold);
+}

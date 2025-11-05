@@ -1,0 +1,62 @@
+/* src/styles/acg-theme.css */
+@import url('https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&display=swap');
+
+:root {
+  /* Colors */
+  --acg-bg: #e0f7fa;
+  --acg-panel-bg: rgba(255, 255, 255, 0.7);
+  --acg-text: #00796b;
+  --acg-text-light: #4db6ac;
+  --acg-primary: #ff7043;
+  --acg-border: rgba(255, 255, 255, 0.5);
+  --acg-highlight-bg: rgba(255, 112, 67, 0.1);
+
+  /* Fonts */
+  --font-acg: 'Mochiy Pop One', sans-serif;
+}
+
+body {
+  font-family: var(--font-acg);
+  color: var(--acg-text);
+  background: var(--acg-bg) url('https://images.unsplash.com/photo-1578632767115-351597cf2473?q=80&w=2070') center/cover fixed;
+  overflow: hidden;
+}
+
+/* Glassmorphism Panel */
+.glassmorphism {
+  background: var(--acg-panel-bg);
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid var(--acg-border);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  border-radius: 16px;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--acg-primary); border-radius: 4px; }
+
+/* Element Plus Overrides */
+.acg-button {
+  background: var(--acg-primary);
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+}
+.acg-button:hover {
+  background: #ff8a65;
+  box-shadow: 0 0 15px rgba(255, 112, 67, 0.5);
+}
+
+.acg-select .el-input__wrapper,
+.acg-input .el-input__wrapper {
+  background: var(--acg-highlight-bg) !important;
+  border: 1px solid var(--acg-border) !important;
+  box-shadow: none !important;
+}
+
+.acg-select .el-input__inner,
+.acg-input .el-input__inner {
+  color: var(--acg-text) !important;
+}

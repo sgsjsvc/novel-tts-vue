@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir /b /a \"D:\\AnLin\\Desktop\\novel-tts-vue\")",
+      "Bash(findstr /i \"claude\\|cursor\\|copilot\\|rules\")",
+      "Bash(dir /s /b \"D:\\AnLin\\Desktop\\novel-tts-vue\\src\")",
+      "Bash(npm run dev)",
+      "Bash(taskkill /f /im node.exe)",
+      "Bash(mkdir:*)",
+      "WebFetch(domain:sr.mihoyo.com)",
+      "Read(//tmp/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

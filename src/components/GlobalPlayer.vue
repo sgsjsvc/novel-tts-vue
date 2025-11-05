@@ -1,39 +1,58 @@
 <!-- src/components/GlobalPlayer.vue -->
 <template>
-  <transition name="slide-up">
-    <div v-if="visible" class="global-player">
+  <transition name="player-slide-up">
+    <div v-if="visible" class="genshin-player-container genshin-panel" :class="{ 'is-expanded': expanded }">
+      <!-- Header / Compact View -->
       <div class="player-header">
-        <el-button size="small" @click="toggleGlobalExpand">{{ expanded ? '收起' : '展开' }}</el-button>
-        <span class="chapter-name">{{ chapterName }}</span>
-        <el-button type="primary" size="small" @click="togglePlay">{{ isPlaying ? '暂停' : '播放' }}</el-button>
+        <div class="chapter-info">
+          <span class="novel-title">{{ novelName }}</span>
+          <span class="chapter-title">{{ chapterName }}</span>
+        </div>
+        <div class="main-controls">
+          <el-button class="genshin-button control-button" @click="togglePlay" :disabled="!chapterLines.length" circle>
+            <el-icon><VideoPause v-if="isPlaying" /><VideoPlay v-else /></el-icon>
+          </el-button>
+          <el-button class="genshin-button control-button" @click="toggleGlobalExpand" circle>
+            <el-icon><ArrowUp v-if="!expanded" /><ArrowDown v-else /></el-icon>
+          </el-button>
+        </div>
       </div>
 
-      <!-- 收缩模式 -->
-      <div v-if="!expanded" class="marquee">
-        <transition name="fade" mode="out-in">
-          <span :key="currentLineIndex">{{ currentLineText }}</span>
-        </transition>
+      <!-- Progress -->
+      <div class="progress-section">
+        <div class="current-line-text">{{ currentLineText }}</div>
+        <el-slider
+          v-model="sliderValue"
+          :min="0"
+          :max="chapterLines.length > 0 ? chapterLines.length - 1 : 0"
+          @change="onSliderChange"
+          class="genshin-slider"
+          :show-tooltip="false"
+          :disabled="!chapterLines.length"
+        />
       </div>
 
-      <!-- 展开模式 -->
-      <div v-else class="expanded-box">
-        <div ref="chapterContentContainer" class="content-box">
-          <div v-for="(line, index) in chapterLines" :key="index" :class="{'highlight': currentLineIndex===index}" class="line-text" @click="jumpToLine(index)" :ref="el => lineRefs[index]=el">
+      <!-- Expanded Lyrics -->
+      <transition name="fade">
+        <div v-if="expanded" class="lyrics-container" ref="chapterContentContainer">
+          <p
+            v-for="(line, index) in chapterLines"
+            :key="index"
+            :class="{ 'is-active': index === currentLineIndex, 'line-text': true }"
+            @click="jumpToLine(index)"
+            :ref="el => { if (el) lineRefs[index] = el as HTMLElement }"
+          >
             {{ line.text }}
-          </div>
+          </p>
         </div>
-        <div class="audio-controls" v-if="chapterLines.length">
-          <el-button size="mini" @click="togglePlay">{{ isPlaying?'暂停':'播放' }}</el-button>
-          <span>{{ currentLineIndex + 1 }} / {{ chapterLines.length }}</span>
-          <el-slider v-model="sliderValue" :min="0" :max="chapterLines.length-1" :step="1" @change="onSliderChange" style="flex:1; margin:0 10px;"></el-slider>
-        </div>
-      </div>
+      </transition>
     </div>
   </transition>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed, nextTick } from 'vue';
+import { ref, reactive, watch, computed, nextTick, onMounted, onUnmounted } from 'vue';
+import { VideoPlay, VideoPause, ArrowUp, ArrowDown } from '@element-plus/icons-vue';
 import { API_BASE_URL } from '../services/api';
 import type { ChapterLine } from '../../types';
 
@@ -49,17 +68,22 @@ const isPlaying = ref(false);
 const currentLineIndex = ref(-1);
 const lineQueueIndex = ref(0);
 const sliderValue = ref(0);
+const playbackRate = ref(1.0); // Keep for potential future use
 const audioObj = ref<HTMLAudioElement | null>(null);
 
 const lineRefs = reactive<HTMLElement[]>([]);
 const chapterContentContainer = ref<HTMLDivElement | null>(null);
 
-const currentLineText = computed(() => props.chapterLines[currentLineIndex.value]?.text || '');
+const currentLineText = computed(() => {
+    if (currentLineIndex.value >= 0 && props.chapterLines[currentLineIndex.value]) {
+        return props.chapterLines[currentLineIndex.value].text;
+    }
+    return '...';
+});
 
-watch(currentLineIndex, (newIndex) => { sliderValue.value = newIndex; });
-
+watch(currentLineIndex, (newIndex) => { if (newIndex >= 0) sliderValue.value = newIndex; });
 watch(() => props.chapterLines, (newLines) => {
-  if (newLines && newLines.length > 0) {
+  if (newLines?.length > 0) {
     stopAudio();
     currentLineIndex.value = -1;
     lineQueueIndex.value = 0;
@@ -87,9 +111,10 @@ const playNextLine = () => {
 
   const line = props.chapterLines[lineQueueIndex.value];
   stopAudio();
-  
+
   const audioUrl = `${API_BASE_URL}/novels/${encodeURIComponent(props.novelName)}/chapters/${encodeURIComponent(props.chapterName)}/audio/${encodeURIComponent(line.file)}`;
   audioObj.value = new Audio(audioUrl);
+  audioObj.value.playbackRate = playbackRate.value;
   audioObj.value.play();
   isPlaying.value = true;
   audioObj.value.onended = () => {
@@ -103,50 +128,137 @@ const togglePlay = () => {
     if (props.chapterLines.length) playNextLine();
     return;
   }
-  if (isPlaying.value) {
-    audioObj.value.pause();
-    isPlaying.value = false;
-  } else {
-    audioObj.value.play();
-    isPlaying.value = true;
-  }
+  if (isPlaying.value) audioObj.value.pause();
+  else audioObj.value.play();
+  isPlaying.value = !isPlaying.value;
 };
 
 const jumpToLine = (index: number) => {
   lineQueueIndex.value = index;
   playNextLine();
 };
-
 const onSliderChange = (val: number | number[]) => jumpToLine(val as number);
+const toggleGlobalExpand = () => expanded.value = !expanded.value;
 
-const toggleGlobalExpand = () => { expanded.value = !expanded.value; };
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.code === 'Space' && props.visible) {
+    event.preventDefault();
+    togglePlay();
+  }
+};
+onMounted(() => window.addEventListener('keydown', handleKeydown));
+onUnmounted(() => window.removeEventListener('keydown', handleKeydown));
 
 const scrollToCurrentLine = () => {
   nextTick(() => {
+    if (!expanded.value) return;
     const container = chapterContentContainer.value;
     const currentLineEl = lineRefs[currentLineIndex.value];
     if (!container || !currentLineEl) return;
-    const containerHeight = container.clientHeight;
-    const lineOffsetTop = currentLineEl.offsetTop;
-    const lineHeight = currentLineEl.clientHeight;
-    container.scrollTop = lineOffsetTop - containerHeight / 2 + lineHeight / 2;
+    container.scrollTop = currentLineEl.offsetTop - container.clientHeight / 2 + currentLineEl.clientHeight / 2;
   });
 };
 </script>
 
 <style scoped>
-.global-player { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; box-shadow: 0 -2px 8px rgba(0,0,0,.15); padding: 10px; z-index: 1000; }
-.player-header { display: flex; justify-content: space-between; align-items: center; }
-.chapter-name { font-weight: bold; margin: 0 10px; }
-.marquee { overflow: hidden; white-space: nowrap; display: flex; justify-content: center; align-items: center; height: 30px; font-size: 16px; }
-.expanded-box { margin-top: 10px; }
-.content-box { background-color: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 50vh; overflow-y: auto; white-space: pre-wrap; word-wrap: break-word; font-size: 14px; }
-.line-text { padding: 4px 6px; transition: background-color 0.3s; cursor: pointer; }
-.highlight { background-color: #ffe58f; font-weight: bold; }
-.audio-controls { display: flex; align-items: center; margin-top: 10px; }
-.slide-up-enter-active, .slide-up-leave-active { transition: all .3s ease; }
-.slide-up-enter-from, .slide-up-leave-to { transform: translateY(100%); opacity: 0; }
-.fade-enter-active, .fade-leave-active { transition: opacity 0.6s ease; }
+.genshin-player-container {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 800px;
+  padding: 1.2rem 2rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+  max-height: 150px;
+}
+.genshin-player-container.is-expanded {
+  max-height: 50vh;
+}
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+.chapter-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.novel-title { font-size: 0.8rem; opacity: 0.7; color: var(--genshin-text-light); }
+.chapter-title { text-overflow: ellipsis; overflow: hidden; font-weight: 600; font-size: 1.1rem; color: var(--genshin-gold); }
+.main-controls { display: flex; gap: 0.8rem; }
+.control-button {
+  width: 44px;
+  height: 44px;
+  font-size: 1.2rem;
+}
+
+.progress-section { flex-shrink: 0; }
+.current-line-text {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--genshin-gold);
+  opacity: 0.8;
+  margin-bottom: 0.8rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 5px var(--genshin-gold);
+}
+
+.lyrics-container {
+  overflow-y: auto;
+  flex-grow: 1;
+  text-align: center;
+  font-size: 1.1rem;
+  scroll-behavior: smooth;
+  padding-right: 1rem; /* for scrollbar */
+}
+.line-text {
+  padding: 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0.7;
+  color: var(--genshin-text-light);
+}
+.line-text.is-active {
+  font-weight: 600;
+  opacity: 1;
+  transform: scale(1.05);
+  color: var(--genshin-gold);
+  text-shadow: 0 0 10px var(--genshin-gold);
+}
+
+/* Slider */
+.genshin-slider {
+  --el-slider-main-bg-color: var(--genshin-gold);
+  --el-slider-runway-bg-color: var(--genshin-highlight-bg);
+  --el-slider-button-size: 14px;
+  --el-slider-button-color: var(--genshin-gold);
+  --el-slider-border-color: var(--genshin-gold);
+}
+.genshin-slider :deep(.el-slider__button-wrapper) {
+  box-shadow: 0 0 10px var(--genshin-gold);
+}
+
+
+/* Transitions */
+.player-slide-up-enter-active, .player-slide-up-leave-active {
+  transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.player-slide-up-enter-from, .player-slide-up-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 20px) scale(0.95);
+}
+.fade-enter-active, .fade-leave-active { transition: opacity 0.5s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
-.fade-enter-to, .fade-leave-from { opacity: 1; }
 </style>
