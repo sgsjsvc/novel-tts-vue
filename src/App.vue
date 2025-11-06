@@ -10,77 +10,52 @@
 
       <!-- Controls -->
       <div class="controls-grid">
-        <el-upload
-          :action="`${API_BASE_URL}/upload`"
-          :show-file-list="false"
-          :on-success="handleUploadSuccess"
-          :on-error="handleUploadError"
-          :before-upload="handleBeforeUpload"
-          accept=".txt,.epub"
-          :disabled="isAnyChapterParsing"
-          class="control-item upload-wrapper"
-        >
+        <el-upload :action="`${API_BASE_URL}/upload`" :show-file-list="false" :on-success="handleUploadSuccess"
+          :on-error="handleUploadError" :before-upload="handleBeforeUpload" accept=".txt,.epub"
+          :disabled="isAnyChapterParsing" class="control-item upload-wrapper">
           <el-button class="genshin-button" :loading="isUploading" :disabled="isAnyChapterParsing">
-            <el-icon><Upload /></el-icon>
+            <el-icon>
+              <Upload />
+            </el-icon>
             <span>{{ isUploading ? '上传中...' : '载入数据卷' }}</span>
           </el-button>
         </el-upload>
 
-        <el-select
-          v-model="selectedNovel"
-          placeholder="选择数据卷"
-          class="genshin-select control-item"
-          filterable
-          clearable
-          :disabled="isAnyChapterParsing"
-          size="large"
-        >
+        <el-select v-model="selectedNovel" placeholder="选择数据卷" class="genshin-select control-item" filterable clearable
+          :disabled="isAnyChapterParsing" size="large">
           <el-option v-for="novel in novels" :key="novel" :label="novel" :value="novel" />
         </el-select>
 
-        <el-input
-          v-model="searchQuery"
-          placeholder="搜索章节..."
-          clearable
-          class="genshin-input control-item"
-          size="large"
-        >
+        <el-input v-model="searchQuery" placeholder="搜索章节..." clearable class="genshin-input control-item" size="large">
           <!-- <template #prepend><el-icon><Search /></el-icon></template> -->
         </el-input>
 
-        <el-select
-          v-model="selectedModel"
-          placeholder="选择解析模型"
-          class="genshin-select control-item"
-          :disabled="isAnyChapterParsing"
-          size="large"
-        >
+        <el-select v-model="selectedModel" placeholder="选择解析模型" class="genshin-select control-item"
+          :disabled="isAnyChapterParsing" size="large">
           <el-option label="Gemini-2.5-Flash" value="gemini-2.5-flash" />
         </el-select>
 
-        <el-button class="genshin-button control-item" @click="handleBatchParse" :disabled="selectedChapters.length === 0 || isAnyChapterParsing">
-          <el-icon><Refresh /></el-icon>
+        <el-button class="genshin-button control-item" @click="handleBatchParse"
+          :disabled="selectedChapters.length === 0 || isAnyChapterParsing">
+          <el-icon>
+            <Refresh />
+          </el-icon>
           <span>批量解析</span>
         </el-button>
 
         <el-button class="genshin-button control-item" @click="logDrawerVisible = true" :disabled="isAnyChapterParsing">
-          <el-icon><Document /></el-icon>
+          <el-icon>
+            <Document />
+          </el-icon>
           <span>查看日志</span>
         </el-button>
       </div>
 
       <!-- Chapters Table -->
       <div class="table-container">
-        <ChapterTable
-          ref="chapterTableRef"
-          :chapters="filteredChapters"
-          :parsingState="parsingState"
-          :isAnyChapterParsing="isAnyChapterParsing"
-          @parse="handleParseChapter"
-          @view="viewChapter"
-          @play="playChapter"
-          @selection-change="handleSelectionChange"
-        />
+        <ChapterTable ref="chapterTableRef" :chapters="filteredChapters" :parsingState="parsingState"
+          :isAnyChapterParsing="isAnyChapterParsing" @parse="handleParseChapter" @view="viewChapter" @play="playChapter"
+          @selection-change="handleSelectionChange" />
       </div>
 
       <!-- Loading / Sentinel -->
@@ -96,20 +71,11 @@
     </div>
 
     <!-- Global Components -->
-    <GlobalPlayer
-      :visible="playerState.visible"
-      :novelName="selectedNovel!"
-      :chapterName="playerState.chapterName"
-      :chapterLines="playerState.chapterLines"
-    />
+    <GlobalPlayer :visible="playerState.visible" :novelName="selectedNovel!" :chapterName="playerState.chapterName"
+      :chapterLines="playerState.chapterLines" />
     <LogDrawer v-model:visible="logDrawerVisible" />
-    <el-dialog
-      v-model="chapterTextViewer.visible"
-      :title="chapterTextViewer.title"
-      width="80%"
-      top="5vh"
-      class="genshin-dialog"
-    >
+    <el-dialog v-model="chapterTextViewer.visible" :title="chapterTextViewer.title" width="80%" top="5vh"
+      class="genshin-dialog">
       <div class="dialog-content">
         <pre>{{ chapterTextViewer.content }}</pre>
       </div>
@@ -176,7 +142,7 @@ const handleBatchParse = () => {
       type: 'info',
     }).then(() => {
       unparsedChapters.forEach(chapter => handleParseChapter(chapter));
-    }).catch(() => {});
+    }).catch(() => { });
   } else {
     ElMessageBox.confirm(`选中的 ${selectedChapters.value.length} 个章节都已解析过，是否要全部重新解析？`, '确认重新解析', {
       confirmButtonText: '全部重新解析',
@@ -184,7 +150,7 @@ const handleBatchParse = () => {
       type: 'warning',
     }).then(() => {
       selectedChapters.value.forEach(chapter => handleParseChapter(chapter));
-    }).catch(() => {});
+    }).catch(() => { });
   }
 };
 
@@ -203,7 +169,7 @@ const { startObserver, stopObserver } = useIntersectionObserver(sentinel, () => 
 const loadNovels = async () => {
   try {
     const res = await api.fetchNovels();
-    novels.value = res.data;
+    novels.value = res.data.data;
     if (novels.value.length > 0 && !selectedNovel.value) {
       selectedNovel.value = novels.value[0];
     }
@@ -211,25 +177,48 @@ const loadNovels = async () => {
 };
 
 const loadChapters = async () => {
-  if (isLoading.value || !hasMore.value || !selectedNovel.value) return;
+  // 如果当前已经在加载，或者没有选择小说，直接返回
+  if (isLoading.value || !selectedNovel.value) return;
+
   isLoading.value = true;
+
   try {
-    const res = await api.fetchChapters(selectedNovel.value, currentPage.value, pageSize.value);
-    const newChapters = res.data.items;
-    if (newChapters.length > 0) {
-      chapters.value.push(...newChapters);
-      if (newChapters.length < pageSize.value) hasMore.value = false;
+    // 调用后端获取章节，响应结构可能是数组或 { items: [...] } 等
+    const res = await api.fetchChapters(selectedNovel.value);
+    const data = res.data ?? null;
+
+    // 规范化为数组
+    let rawItems: any[] = [];
+    if (Array.isArray(data)) {
+      rawItems = data;
+    } else if (Array.isArray((data as any)?.items)) {
+      rawItems = (data as any).items;
+    } else if (Array.isArray((data as any)?.data)) {
+      rawItems = (data as any).data;
     } else {
-      hasMore.value = false;
+      rawItems = [];
     }
-  } catch {
+
+    // 将后端条目映射为 Chapter 类型并赋值
+    chapters.value = rawItems.map((item: any) => ({
+  // ✅ 名称优先使用 fileName 或 name，并去掉末尾的 ".txt"
+  name: (item.fileName ?? item.name ?? '').replace(/\.txt$/i, ''),
+      status: item.status === 1 ? '已解析' : item.status === 2 ? '正在解析' : '未解析',
+      progress: item.progress ?? 0,
+    }));
+
+    // 如果需要保留原始 items 也可返回或使用，这里不再返回 { items }
+  } catch (e) {
+    console.error(e);
     ElMessage.error('加载章节列表失败。');
   } finally {
     isLoading.value = false;
-    if (hasMore.value) startObserver();
-    else stopObserver();
+
+    // 全量加载完后，直接停止观察器
+    stopObserver();
   }
 };
+
 
 const resetAndLoadChapters = () => {
   chapters.value = [];
@@ -297,7 +286,7 @@ const handleParseChapter = async (chapter: Chapter) => {
     }
   };
   if (chapter.status === '已解析') {
-    ElMessageBox.confirm(`'${chapter.name}' 已解析，重新解析？`, '确认', { confirmButtonText: '重新解析', cancelButtonText: '取消', type: 'warning' }).then(startParsing).catch(() => {});
+    ElMessageBox.confirm(`'${chapter.name}' 已解析，重新解析？`, '确认', { confirmButtonText: '重新解析', cancelButtonText: '取消', type: 'warning' }).then(startParsing).catch(() => { });
   } else {
     startParsing();
   }
@@ -320,6 +309,7 @@ watch(selectedNovel, (newVal) => {
   justify-content: center;
   align-items: center;
 }
+
 .main-panel {
   width: 100%;
   height: 100%;
@@ -334,6 +324,7 @@ watch(selectedNovel, (newVal) => {
   margin-bottom: 2rem;
   flex-shrink: 0;
 }
+
 .app-title h1 {
   font-size: 3rem;
   font-weight: 700;
@@ -341,6 +332,7 @@ watch(selectedNovel, (newVal) => {
   color: var(--genshin-gold);
   text-shadow: 0 0 15px var(--genshin-gold);
 }
+
 .app-title p {
   font-size: 1rem;
   opacity: 0.8;
@@ -355,10 +347,16 @@ watch(selectedNovel, (newVal) => {
   margin-bottom: 2rem;
   flex-shrink: 0;
 }
-.upload-wrapper, .upload-wrapper .el-upload, .genshin-button {
+
+.upload-wrapper,
+.upload-wrapper .el-upload,
+.genshin-button {
   width: 100%;
 }
-.genshin-button span { margin-left: 8px; }
+
+.genshin-button span {
+  margin-left: 8px;
+}
 
 .table-container {
   flex-grow: 1;
@@ -373,20 +371,35 @@ watch(selectedNovel, (newVal) => {
   padding: 1rem 0 0;
   flex-shrink: 0;
 }
-.end-text { color: var(--genshin-text); }
-.sentinel { height: 50px; }
+
+.end-text {
+  color: var(--genshin-text);
+}
+
+.sentinel {
+  height: 50px;
+}
 
 .sr-dialog {
   background: var(--genshin-panel-bg) !important;
   border: 1px solid var(--genshin-border) !important;
   backdrop-filter: blur(20px) !important;
 }
-.sr-dialog .el-dialog__title { color: var(--genshin-gold); }
+
+.sr-dialog .el-dialog__title {
+  color: var(--genshin-gold);
+}
+
 .dialog-content {
   max-height: 70vh;
   overflow-y: auto;
-  background: rgba(0,0,0,0.2);
+  background: rgba(0, 0, 0, 0.2);
   padding: 1rem;
 }
-pre { white-space: pre-wrap; word-wrap: break-word; color: var(--genshin-text); }
+
+pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: var(--genshin-text);
+}
 </style>

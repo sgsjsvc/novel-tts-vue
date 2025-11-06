@@ -4,18 +4,19 @@ import axios from 'axios';
 import type { Chapter } from '../../types';
 
 const apiClient = axios.create({
-  baseURL: 'http://127.0.0.1:8888/api',
+  baseURL: '/api',
 });
 
 export const fetchNovels = () => {
   return apiClient.get<string[]>('/novels');
 };
 
-export const fetchChapters = (novelName: string, page: number, pageSize: number) => {
-  return apiClient.get<{ items: Chapter[] }>(`/novels/${novelName}/chapters`, {
-    params: { page, page_size: pageSize },
-  });
+// ✅ 非分页版本：一次性获取所有章节
+export const fetchChapters = (novelName: string) => {
+  // 请求时不再传分页参数
+  return apiClient.get<{ items: Chapter[] }>(`/novels/${novelName}/chapters`);
 };
+
 
 // 获取日志数据（支持过滤）
 export const fetchLogs = (filters?: {
