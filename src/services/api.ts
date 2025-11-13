@@ -56,10 +56,10 @@ export const parseChapter = (novelName: string, chapterName: string, model: stri
 //   return apiClient.post(`/novels/${novelName}/chapters/statuses`, chapterNames);
 // };
 
-// // 改造版：fetch 单章节进度
-// export const fetchChapterProgress = (novelName: string, chapterName: string) => {
-//   return apiClient.get(`/novels/${encodeURIComponent(novelName)}/chapters/${encodeURIComponent(chapterName)}/progress`);
-// };
+// 改造版：fetch 单章节进度
+export const fetchChapterStatuses = (novelName: string, chapterName: string) => {
+  return apiClient.get(`/novels/${encodeURIComponent(novelName)}/chapters/${encodeURIComponent(chapterName)}/progress`);
+};
 
 // // 批量获取多个章节进度
 // export const fetchChapterStatuses = async (novelName: string, chapterNames: string[]) => {
