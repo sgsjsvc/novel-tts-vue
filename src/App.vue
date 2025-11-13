@@ -33,6 +33,8 @@
         <el-select v-model="selectedModel" placeholder="选择解析模型" class="genshin-select control-item"
           :disabled="isAnyChapterParsing" size="large">
           <el-option label="Gemini-2.5-Flash" value="gemini-2.5-flash" />
+          <el-option label="Gemini-2.5-Flash-Lite" value="gemini-2.5-flash-lite" />
+          <el-option label="Gemini-2.0-Flash" value="gemini-2.0-flash" />
         </el-select>
 
         <el-button class="genshin-button control-item" @click="handleBatchParse"
@@ -201,8 +203,8 @@ const loadChapters = async () => {
 
     // 将后端条目映射为 Chapter 类型并赋值
     chapters.value = rawItems.map((item: any) => ({
-  // ✅ 名称优先使用 fileName 或 name，并去掉末尾的 ".txt"
-  name: (item.fileName ?? item.name ?? '').replace(/\.txt$/i, ''),
+      // ✅ 名称优先使用 fileName 或 name，并去掉末尾的 ".txt"
+      name: (item.fileName ?? item.name ?? '').replace(/\.txt$/i, ''),
       status: item.status === 1 ? '已解析' : item.status === 2 ? '正在解析' : '未解析',
       progress: item.progress ?? 0,
     }));
@@ -265,32 +267,70 @@ const handleParseChapter = async (chapter: Chapter) => {
     parsingState[chapter.name] = true;
     const chapterInList = chapters.value.find(c => c.name === chapter.name);
     if (chapterInList) chapterInList.status = '正在解析';
+
     try {
+      // 1️⃣ 发起后台解析任务
       await api.parseChapter(selectedNovel.value!, chapter.name, selectedModel.value);
       ElMessage.info(`'${chapter.name}' 已提交后台解析。`);
+
+      // 2️⃣ 开始轮询进度接口
       const intervalId = setInterval(async () => {
-        const res = await api.fetchChapterStatuses(selectedNovel.value!, [chapter.name]);
-        const status = res.data[0].status as Chapter["status"];
-        if (chapterInList) chapterInList.status = status;
-        if (status === "已解析" || status === "未解析") {
-          clearInterval(intervalId);
-          isAnyChapterParsing.value = false;
+        try {
+          const res = await api.fetchChapterProgress(selectedNovel.value!, chapter.name);
+          const data = res.data?.data;
+
+          if (!data) return;
+
+          // 更新章节状态
+          if (chapterInList) {
+            chapterInList.status = data.completed
+              ? '已解析'
+              : data.error
+              ? '解析失败'
+              : '正在解析';
+            // ✅ 根据返回 status 或计算比例
+            chapterInList.progress = data.status ?? Math.round((data.completedSegments / data.totalSegments) * 100);
+          }
+
+          // ✅ 实时错误提示
+          if (data.error && data.errorMessage) {
+            ElMessage.error(data.errorMessage);
+          }
+
+          // ✅ 完成或错误时停止轮询
+          if (data.completed || data.error) {
+            clearInterval(intervalId);
+            isAnyChapterParsing.value = false;
+            parsingState[chapter.name] = false;
+            if (data.completed) {
+              ElMessage.success(`'${chapter.name}' 解析完成！`);
+            }
+          }
+        } catch (pollError) {
+          console.error('进度查询失败:', pollError);
         }
       }, 3000);
-    } catch (error: any) {
+    } catch (error) {
+      console.error(error);
       ElMessage.error('提交解析失败。');
       if (chapterInList) chapterInList.status = '未解析';
       isAnyChapterParsing.value = false;
-    } finally {
       parsingState[chapter.name] = false;
     }
   };
+
+  // 如果章节已解析，提示是否重新解析
   if (chapter.status === '已解析') {
-    ElMessageBox.confirm(`'${chapter.name}' 已解析，重新解析？`, '确认', { confirmButtonText: '重新解析', cancelButtonText: '取消', type: 'warning' }).then(startParsing).catch(() => { });
+    ElMessageBox.confirm(`'${chapter.name}' 已解析，是否重新解析？`, '确认', {
+      confirmButtonText: '重新解析',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }).then(startParsing).catch(() => {});
   } else {
     startParsing();
   }
 };
+
 
 onMounted(loadNovels);
 watch(selectedNovel, (newVal) => {

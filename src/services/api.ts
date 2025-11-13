@@ -52,9 +52,29 @@ export const parseChapter = (novelName: string, chapterName: string, model: stri
   });
 };
 
-export const fetchChapterStatuses = (novelName: string, chapterNames: string[]) => {
-  return apiClient.post(`/novels/${novelName}/chapters/statuses`, chapterNames);
+// export const fetchChapterStatuses = (novelName: string, chapterNames: string[]) => {
+//   return apiClient.post(`/novels/${novelName}/chapters/statuses`, chapterNames);
+// };
+
+// // 改造版：fetch 单章节进度
+// export const fetchChapterProgress = (novelName: string, chapterName: string) => {
+//   return apiClient.get(`/novels/${encodeURIComponent(novelName)}/chapters/${encodeURIComponent(chapterName)}/progress`);
+// };
+
+// // 批量获取多个章节进度
+// export const fetchChapterStatuses = async (novelName: string, chapterNames: string[]) => {
+//   const results = await Promise.all(
+//     chapterNames.map(async (chapterName) => {
+//       const res = await fetchChapterProgress(novelName, chapterName);
+//       return res.data; // 假设返回 {chapterName, progress, status}
+//     })
+//   );
+//   return results;
+// };
+export const fetchChapterProgress = (novelName: string, chapterName: string) => {
+  return apiClient.get(`/novels/${novelName}/chapters/${chapterName}/progress`);
 };
+
 
 // WebSocket URL for real-time logs
 export const WS_BASE_URL = '';
